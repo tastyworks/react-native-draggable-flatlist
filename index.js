@@ -104,7 +104,7 @@ class SortableFlatList extends Component {
         const spacerMeasurements = this._measurements[spacerIndex]
         const lastElementMeasurements = this._measurements[data.length - 1]
 
-        // If user flings row up and lets go in the middle of an animation measurements can error out. 
+        // If user flings row up and lets go in the middle of an animation measurements can error out.
         // Give layout animations some time to complete and animate element into place before calling onMoveEnd
 
         // Spacers have different positioning depending on whether the spacer row is before or after the active row.
@@ -169,8 +169,7 @@ class SortableFlatList extends Component {
 
   animate = () => {
     const { activeRow } = this.state
-    const { scrollPercent, data, horizontal, scrollSpeed } = this.props
-    const scrollRatio = scrollPercent / 100
+    const { data } = this.props
     if (activeRow === -1) return
     const nextSpacerIndex = this.getSpacerIndex(this._move, activeRow)
     if (nextSpacerIndex > -1 && nextSpacerIndex !== this._spacerIndex) {
@@ -178,20 +177,6 @@ class SortableFlatList extends Component {
       this.setState({ spacerIndex: nextSpacerIndex })
       this._spacerIndex = nextSpacerIndex
       if (nextSpacerIndex === data.length) this._flatList.scrollToEnd()
-    }
-
-    // Scroll if hovering in top or bottom of container and have set a scroll %
-    const isLastItem = (activeRow === data.length - 1) || nextSpacerIndex === data.length
-    const isFirstItem = activeRow === 0
-    if (this._measurements[activeRow]) {
-      const rowSize = this._measurements[activeRow][horizontal ? 'width' : 'height']
-      const hoverItemTopPosition = Math.max(0, this._move - (this._additionalOffset + this._containerOffset))
-      const hoverItemBottomPosition = Math.min(this._containerSize, hoverItemTopPosition + rowSize)
-      const fingerPosition = Math.max(0, this._move - this._containerOffset)
-      const shouldScrollUp = !isFirstItem && fingerPosition < (this._containerSize * scrollRatio)
-      const shouldScrollDown = !isLastItem && fingerPosition > (this._containerSize * (1 - scrollRatio))
-      if (shouldScrollUp) this.scroll(-scrollSpeed, nextSpacerIndex)
-      else if (shouldScrollDown) this.scroll(scrollSpeed, nextSpacerIndex)
     }
 
     requestAnimationFrame(this.animate)
@@ -350,7 +335,7 @@ class SortableFlatList extends Component {
       >
         <FlatList
           {...this.props}
-          scrollEnabled={this.state.activeRow === -1}
+          scrollEnabled={false}
           ref={ref => this._flatList = ref}
           renderItem={this.renderItem}
           extraData={this.state}
@@ -367,7 +352,6 @@ class SortableFlatList extends Component {
 export default SortableFlatList
 
 SortableFlatList.defaultProps = {
-  scrollPercent: 5,
   scrollSpeed:5,
   contentContainerStyle: {},
 }
@@ -418,5 +402,5 @@ const styles = StyleSheet.create({
     bottom: 0,
     top: 0,
   },
-  wrapper: { flex: 1, opacity: 1 }
+  wrapper: { opacity: 1 }
 })
