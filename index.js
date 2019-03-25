@@ -48,8 +48,9 @@ class SortableFlatList extends Component {
     this._panResponder = PanResponder.create({
       onStartShouldSetPanResponderCapture: (evt, gestureState) => {
         const { pageX, pageY } = evt.nativeEvent
-        const { horizontal } = this.props
-        const tappedPixel = horizontal ? pageX : pageY
+        const { externalScrollOffset, horizontal } = this.props
+        const tappedPixel = (horizontal ? pageX : pageY) + externalScrollOffset
+
         const tappedRow = this._pixels[Math.floor(this._scrollOffset + tappedPixel)]
         if (tappedRow === undefined) return false
         this._additionalOffset = (tappedPixel + this._scrollOffset) - this._measurements[tappedRow][horizontal ? 'x' : 'y']
@@ -71,7 +72,7 @@ class SortableFlatList extends Component {
 
           this._androidStatusBarOffset = (isTranslucent || isHidden) ? StatusBar.currentHeight : 0
         }
-        this._offset.setValue((this._additionalOffset + this._containerOffset - this._androidStatusBarOffset) * -1)
+        this._offset.setValue((this._additionalOffset + this._containerOffset - this._androidStatusBarOffset - externalScrollOffset) * -1)
         return false
       },
       onMoveShouldSetPanResponder: (evt, gestureState) => {
@@ -92,14 +93,14 @@ class SortableFlatList extends Component {
       onPanResponderMove: Animated.event([null, { [props.horizontal ? 'moveX' : 'moveY']: this._moveAnim }], {
         listener: (evt, gestureState) => {
           const { moveX, moveY } = gestureState
-          const { horizontal } = this.props
-          this._move = horizontal ? moveX : moveY
+          const { externalScrollOffset, horizontal } = this.props
+          this._move = (horizontal ? moveX : moveY) + externalScrollOffset
         }
       }),
       onPanResponderTerminationRequest: ({ nativeEvent }, gestureState) => false,
       onPanResponderRelease: () => {
         const { activeRow, spacerIndex } = this.state
-        const { data, horizontal } = this.props
+        const { data, externalScrollOffset, horizontal } = this.props
         const activeMeasurements = this._measurements[activeRow]
         const spacerMeasurements = this._measurements[spacerIndex]
         const lastElementMeasurements = this._measurements[data.length - 1]
@@ -119,7 +120,7 @@ class SortableFlatList extends Component {
         const offset = horizontal ? x : y
         const pos = offset - this._scrollOffset + this._additionalOffset + (isLastElement ? size : 0)
         const activeItemSize = horizontal ? activeMeasurements.width : activeMeasurements.height
-        this._releaseVal = pos - (isAfterActive ? activeItemSize : 0)
+        this._releaseVal = pos - (isAfterActive ? activeItemSize : 0) - externalScrollOffset
         if (this._releaseAnim) this._releaseAnim.stop()
         this._releaseAnim = Animated.spring(this._moveAnim, {
           toValue: this._releaseVal,
@@ -214,15 +215,17 @@ class SortableFlatList extends Component {
 
   measureItem = (index) => {
     const { activeRow } = this.state
-    const { horizontal } = this.props
+    const { externalScrollOffset, horizontal } = this.props
+    const yExternalScrollOffset = horizontal ? 0 : externalScrollOffset
+    const xExternalScrollOffset = horizontal ? externalScrollOffset : 0
     // setTimeout required or else dimensions reported as 0
     !!this._refs[index] && setTimeout(() => {
       try {
         // Using stashed ref prevents measuring an unmounted componenet, which throws an error
         !!this._refs[index] && this._refs[index].measureInWindow(((x, y, width, height) => {
           if ((width || height) && activeRow === -1) {
-            const ypos = y + this._scrollOffset
-            const xpos = x + this._scrollOffset
+            const ypos = y + this._scrollOffset + yExternalScrollOffset
+            const xpos = x + this._scrollOffset + xExternalScrollOffset
             const pos = horizontal ? xpos : ypos
             const size = horizontal ? width : height
             const rowMeasurements = { y: ypos, x: xpos, width, height }
@@ -352,7 +355,8 @@ class SortableFlatList extends Component {
 export default SortableFlatList
 
 SortableFlatList.defaultProps = {
-  scrollSpeed:5,
+  externalScrollOffset: 0,
+  scrollSpeed: 5,
   contentContainerStyle: {},
 }
 
