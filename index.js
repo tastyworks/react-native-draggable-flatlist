@@ -211,7 +211,8 @@ class SortableFlatList extends Component {
       })
     }
     // Spacer index differs according to placement. See note in onPanResponderRelease
-    return spacerIndex > activeRow ? spacerIndex + 1 : spacerIndex
+    const newSpacerIndex = spacerIndex > activeRow ? spacerIndex + 1 : spacerIndex
+    return Math.min(newSpacerIndex, this.props.data.length)
   }
 
   measureItem = (index) => {
