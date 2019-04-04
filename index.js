@@ -20,7 +20,7 @@ const initialState = {
   activeRow: -1,
   showHoverComponent: false,
   spacerIndex: -1,
-  scroll: false,
+  // scroll: false,
   hoverComponent: null,
   extraData: null,
 }
@@ -49,16 +49,16 @@ class SortableFlatList extends Component {
       onStartShouldSetPanResponderCapture: (evt, gestureState) => {
         const { pageX, pageY } = evt.nativeEvent
         const { externalScrollOffset, horizontal } = this.props
-        const tappedPixel = (horizontal ? pageX : pageY) + externalScrollOffset
+        const tappedPixel = horizontal ? pageX : pageY
 
-        const tappedRow = this._pixels[Math.floor(this._scrollOffset + tappedPixel)]
+        const tappedRow = this._pixels[Math.floor(this._scrollOffset + tappedPixel + externalScrollOffset)]
         if (tappedRow === undefined) return false
-        this._additionalOffset = (tappedPixel + this._scrollOffset) - this._measurements[tappedRow][horizontal ? 'x' : 'y']
+        this._additionalOffset = (tappedPixel + this._scrollOffset + externalScrollOffset) - this._measurements[tappedRow][horizontal ? 'x' : 'y']
         if (this._releaseAnim) {
           return false
         }
         this._moveAnim.setValue(tappedPixel)
-        this._move = tappedPixel
+        this._move = tappedPixel + externalScrollOffset
 
         // compensate for translucent or hidden StatusBar on android
         if (Platform.OS === 'android' && !horizontal) {
@@ -72,7 +72,8 @@ class SortableFlatList extends Component {
 
           this._androidStatusBarOffset = (isTranslucent || isHidden) ? StatusBar.currentHeight : 0
         }
-        this._offset.setValue((this._additionalOffset + this._containerOffset - this._androidStatusBarOffset - externalScrollOffset) * -1)
+        const containerOffset = this._containerOffset === undefined ? 0 : this._containerOffset
+        this._offset.setValue((this._additionalOffset + containerOffset - this._androidStatusBarOffset - externalScrollOffset) * -1)
         return false
       },
       onMoveShouldSetPanResponder: (evt, gestureState) => {
@@ -118,9 +119,9 @@ class SortableFlatList extends Component {
         const { x, y, width, height } = spacerElement
         const size = horizontal ? width : height
         const offset = horizontal ? x : y
-        const pos = offset - this._scrollOffset + this._additionalOffset + (isLastElement ? size : 0)
+        const pos = offset - this._scrollOffset + this._additionalOffset + (isLastElement ? size : 0) - externalScrollOffset
         const activeItemSize = horizontal ? activeMeasurements.width : activeMeasurements.height
-        this._releaseVal = pos - (isAfterActive ? activeItemSize : 0) - externalScrollOffset
+        this._releaseVal = pos - (isAfterActive ? activeItemSize : 0)
         if (this._releaseAnim) this._releaseAnim.stop()
         this._releaseAnim = Animated.spring(this._moveAnim, {
           toValue: this._releaseVal,
@@ -183,15 +184,15 @@ class SortableFlatList extends Component {
     requestAnimationFrame(this.animate)
   }
 
-  scroll = (scrollAmt, spacerIndex) => {
-    if (spacerIndex >= this.props.data.length) return this._flatList.scrollToEnd()
-    if (spacerIndex === -1) return
-    const currentScrollOffset = this._scrollOffset
-    const newOffset = currentScrollOffset + scrollAmt
-    const offset = Math.max(0, newOffset)
-    this._flatList.scrollToOffset({ offset, animated: false })
-  }
-
+  // scroll = (scrollAmt, spacerIndex) => {
+  //   const { externalScrollOffset } = this.props
+  //   if (spacerIndex >= this.props.data.length) return this._flatList.scrollToEnd()
+  //   if (spacerIndex === -1) return
+  //   const currentScrollOffset = this._scrollOffset + externalScrollOffset
+  //   const newOffset = currentScrollOffset + scrollAmt
+  //   const offset = Math.max(0, newOffset)
+  //   this._flatList.scrollToOffset({ offset, animated: false })
+  // }
 
   getSpacerIndex = (move, activeRow) => {
     const { horizontal } = this.props
@@ -259,7 +260,7 @@ class SortableFlatList extends Component {
   }
 
   moveEnd = () => {
-    if (!this._hasMoved) this.setState(initialState)
+    if (!this._hasMoved) this.setState(initialState, this.onReleaseAnimationEnd)
   }
 
   setRef = index => (ref) => {
