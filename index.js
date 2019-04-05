@@ -72,8 +72,7 @@ class SortableFlatList extends Component {
 
           this._androidStatusBarOffset = (isTranslucent || isHidden) ? StatusBar.currentHeight : 0
         }
-        const containerOffset = this._containerOffset === undefined ? 0 : this._containerOffset
-        this._offset.setValue((this._additionalOffset + containerOffset - this._androidStatusBarOffset - externalScrollOffset) * -1)
+        this._offset.setValue((this._additionalOffset + this._containerOffset - this._androidStatusBarOffset - externalScrollOffset) * -1)
         return false
       },
       onMoveShouldSetPanResponder: (evt, gestureState) => {
@@ -331,6 +330,7 @@ class SortableFlatList extends Component {
     const { horizontal, keyExtractor } = this.props
     return (
       <View
+        collapsable={false}
         ref={this.measureContainer}
         {...this._panResponder.panHandlers}
         style={styles.wrapper} // Setting { opacity: 1 } fixes Android measurement bug: https://github.com/facebook/react-native/issues/18034#issuecomment-368417691
