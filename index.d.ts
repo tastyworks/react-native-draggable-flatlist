@@ -34,6 +34,11 @@ interface DraggableFlatListProps<Item> extends FlatListProps<Item> {
   data: ReadonlyArray<Item> | null;
 
   /**
+   *  Function that is called when a row is being dragged.
+   */
+  onMove?: (position: number) => void;
+
+  /**
    *  Function that returns updated ordering of data
    */
   onMoveEnd?: (info: OnMoveEndInfo<Item>) => void;
