@@ -94,7 +94,14 @@ class SortableFlatList extends Component {
         listener: (evt, gestureState) => {
           const { moveX, moveY } = gestureState
           const { externalScrollOffset, horizontal } = this.props
-          this._move = (horizontal ? moveX : moveY) + externalScrollOffset
+          const movementAmount = horizontal ? moveX : moveY
+
+          if (this.props.onMove) {
+            this.props.onMove(movementAmount)
+          }
+
+          this._move = movementAmount + externalScrollOffset
+          this._offset.setValue((this._additionalOffset + this._containerOffset - this._androidStatusBarOffset - externalScrollOffset) * -1)
         }
       }),
       onPanResponderTerminationRequest: ({ nativeEvent }, gestureState) => false,
