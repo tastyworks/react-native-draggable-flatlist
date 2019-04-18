@@ -57,7 +57,13 @@ class SortableFlatList extends Component {
         if (this._releaseAnim) {
           return false
         }
-        this._moveAnim.setValue(tappedPixel)
+
+        const allRowsDown = this._measurements.slice(0,tappedRow)
+        const rowsOffset = allRowsDown.reduce((accumulator, val) => val.height + accumulator, 0)
+        const tappedRowMidPoint = (horizontal ? this._measurements[tappedRow].width : this._measurements[tappedRow].height) / 2
+        const listPosition = horizontal ? this._measurements[0].x : this._measurements[0].y
+
+        this._moveAnim.setValue(rowsOffset + listPosition + tappedRowMidPoint - externalScrollOffset)
         this._move = tappedPixel + externalScrollOffset
 
         // compensate for translucent or hidden StatusBar on android
@@ -72,7 +78,8 @@ class SortableFlatList extends Component {
 
           this._androidStatusBarOffset = (isTranslucent || isHidden) ? StatusBar.currentHeight : 0
         }
-        this._offset.setValue((this._additionalOffset + this._containerOffset - this._androidStatusBarOffset - externalScrollOffset) * -1)
+
+        this._offset.setValue((this._containerOffset - this._androidStatusBarOffset - externalScrollOffset) * -1)
         return false
       },
       onMoveShouldSetPanResponder: (evt, gestureState) => {
@@ -101,7 +108,7 @@ class SortableFlatList extends Component {
           }
 
           this._move = movementAmount + externalScrollOffset
-          this._offset.setValue((this._additionalOffset + this._containerOffset - this._androidStatusBarOffset - externalScrollOffset) * -1)
+          this._offset.setValue((this._containerOffset - this._androidStatusBarOffset - externalScrollOffset) * -1)
         }
       }),
       onPanResponderTerminationRequest: ({ nativeEvent }, gestureState) => false,
@@ -303,6 +310,7 @@ class SortableFlatList extends Component {
   renderHoverComponent = () => {
     const { hoverComponent } = this.state
     const { horizontal } = this.props
+
     return !!hoverComponent && (
       <Animated.View style={[
         horizontal ? styles.hoverComponentHorizontal : styles.hoverComponentVertical,
